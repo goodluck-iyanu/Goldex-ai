@@ -7,10 +7,15 @@
     
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;400;600;700;800&display=swap" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2">
+    </script>
     
     <style>
-        /* ===== ALL YOUR STYLES (keep the same) ===== */
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
         body {
             font-family: "Inter", sans-serif;
             background: #08080c;
@@ -28,11 +33,11 @@
             max-height: 920px;
             background: #121216;
             border-radius: 32px;
-            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.9);
             display: flex;
             flex-direction: column;
             overflow: hidden;
             border: 1px solid #24242e;
+            box-shadow: 0 30px 80px rgba(0,0,0,0.9);
         }
         .auth-screen {
             display: flex;
@@ -308,7 +313,6 @@
                         <div class="bubble">
                             <p>👋 Welcome to <strong>Goldex AI</strong>!</p>
                             <p>I'm your intelligent assistant. Ask me anything!</p>
-                            <p style="font-size: 13px; color: #8a8aa0; margin-top: 6px;">⚡ Powered by Groq</p>
                         </div>
                         <div class="timestamp">Just now</div>
                     </div>
@@ -328,49 +332,15 @@
         </div>
     </div>
 
-    <!-- ===== LOAD SUPABASE ===== -->
     <script>
-        // First, check if Supabase loaded
-        console.log('🔄 Loading Supabase...');
-    </script>
-    
-    <!-- Try loading Supabase from different CDN -->
-    <script src="https://unpkg.com/@supabase/supabase-js@2.39.0/dist/umd/supabase.min.js">
-    </script>
-    
-    <!-- Fallback if first one fails -->
-    <script>
-        if (typeof supabase === 'undefined') {
-            console.log('⚠️ First CDN failed, trying backup...');
-            document.write('<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"><\/script>');
-        }
-    </script>
-
-    <script>
-        console.log('🚀 Goldex AI starting...');
-        console.log('📌 Supabase available?', typeof supabase !== 'undefined');
-
         // ================================================================
-        // 🔥 SUPABASE CONFIG - REPLACE WITH YOUR VALUES
+        // SUPABASE CONFIG - REPLACE WITH YOUR VALUES
         // ================================================================
-        const SUPABASE_URL = "https://bfewxrbpohkdlibbhvvw.supabase.co"; // ← CHANGE THIS
-        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJmZXd4cmJwb2hrZGxpYmJodnZ3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI2OTg0ODgsImV4cCI6MjA5ODI3NDQ4OH0.ufzszE5GBJjYmJBGJYipOD1TUaeaW9zs63CZU2ryT_M"; // ← CHANGE THIS
-
-        // Check if Supabase loaded
-        let supabaseClient;
-        try {
-            if (typeof supabase !== 'undefined') {
-                supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-                console.log('✅ Supabase client created!');
-            } else {
-                console.error('❌ Supabase SDK not loaded!');
-                alert('⚠️ Supabase SDK failed to load. Using demo mode instead.');
-            }
-        } catch (err) {
-            console.error('❌ Error creating Supabase client:', err);
-            alert('⚠️ Error: ' + err.message);
-        }
-
+        const SUPABASE_URL = "https://bfewxrbpohkdlibbhvvw.supabase.co"; // ← CHANGE
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJmZXd4cmJwb2hrZGxpYmJodnZ3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI2OTg0ODgsImV4cCI6MjA5ODI3NDQ4OH0.ufzszE5GBJjYmJBGJYipOD1TUaeaW9zs63CZU2ryT_M"; // ← CHANGE
+        
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        
         // ================================================================
         // DOM REFS
         // ================================================================
@@ -392,31 +362,22 @@
         let currentUser = null;
 
         // ================================================================
-        // AUTH FUNCTIONS
+        // AUTH
         // ================================================================
-
-        authToggle.addEventListener('click', function() {
+        authToggle.addEventListener('click', () => {
             isLogin = !isLogin;
             authBtn.textContent = isLogin ? 'Sign In' : 'Create Account';
             authToggle.textContent = isLogin ? 'Create Account' : 'Sign In';
             authError.style.display = 'none';
-            console.log('🔁 Switched to:', isLogin ? 'Sign In' : 'Create Account');
         });
 
         async function handleAuth() {
             const email = authEmail.value.trim();
             const pass = authPassword.value.trim();
-
-            console.log('📧 Email:', email);
-            console.log('🔑 Password length:', pass.length);
-
+            
             if (!email || !pass) {
-                showError('Please fill in all fields.');
-                return;
-            }
-
-            if (pass.length < 6) {
-                showError('Password must be at least 6 characters.');
+                authError.textContent = 'Please fill in all fields.';
+                authError.style.display = 'block';
                 return;
             }
 
@@ -424,61 +385,24 @@
             authBtn.textContent = 'Loading...';
             authError.style.display = 'none';
 
-            // If Supabase isn't available, use demo mode
-            if (!supabaseClient) {
-                console.log('📱 DEMO MODE: Simulating login...');
-                setTimeout(function() {
-                    currentUser = { email: email, id: 'demo-user-123' };
-                    authScreen.style.display = 'none';
-                    chatUI.classList.add('active');
-                    userEmail.textContent = currentUser.email;
-                    loadChatHistory();
-                    authBtn.disabled = false;
-                    authBtn.textContent = isLogin ? 'Sign In' : 'Create Account';
-                }, 1000);
-                return;
-            }
-
             try {
                 let result;
                 if (isLogin) {
-                    console.log('🔐 Attempting sign in...');
-                    result = await supabaseClient.auth.signInWithPassword({ 
-                        email: email, 
-                        password: pass 
-                    });
+                    result = await supabase.auth.signInWithPassword({ email, password: pass });
                 } else {
-                    console.log('📝 Attempting sign up...');
-                    result = await supabaseClient.auth.signUp({ 
-                        email: email, 
-                        password: pass
-                    });
+                    result = await supabase.auth.signUp({ email, password: pass });
                 }
 
-                console.log('📦 Result:', result);
-
-                if (result.error) {
-                    console.error('❌ Auth error:', result.error);
-                    throw new Error(result.error.message);
-                }
-
-                if (!result.data || !result.data.user) {
-                    throw new Error('No user data returned. Please check your Supabase configuration.');
-                }
+                if (result.error) throw new Error(result.error.message);
 
                 currentUser = result.data.user;
-                console.log('✅ User:', currentUser);
-
                 authScreen.style.display = 'none';
                 chatUI.classList.add('active');
                 userEmail.textContent = currentUser.email;
-
-                // Wait for chat history
                 await loadChatHistory();
-
             } catch (err) {
-                console.error('❌ Error:', err);
-                showError(err.message || 'Authentication failed. Please try again.');
+                authError.textContent = err.message;
+                authError.style.display = 'block';
             } finally {
                 authBtn.disabled = false;
                 authBtn.textContent = isLogin ? 'Sign In' : 'Create Account';
@@ -486,122 +410,69 @@
         }
 
         authBtn.addEventListener('click', handleAuth);
+        authPassword.addEventListener('keydown', (e) => { if (e.key === 'Enter') handleAuth(); });
 
-        authPassword.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                handleAuth();
-            }
-        });
-
-        function showError(msg) {
-            authError.textContent = msg;
-            authError.style.display = 'block';
-        }
-
-        // Logout
-        logoutBtn.addEventListener('click', async function() {
-            if (supabaseClient) {
-                await supabaseClient.auth.signOut();
-            }
+        logoutBtn.addEventListener('click', async () => {
+            await supabase.auth.signOut();
             currentUser = null;
             chatUI.classList.remove('active');
             authScreen.style.display = 'flex';
             chatArea.innerHTML = '';
             userInput.value = '';
-            console.log('👋 Logged out');
         });
 
-        // Auto-login check (only if Supabase is available)
-        if (supabaseClient) {
-            supabaseClient.auth.onAuthStateChange(function(event, session) {
-                console.log('🔄 Auth state changed:', event);
-                if (session?.user) {
-                    currentUser = session.user;
-                    authScreen.style.display = 'none';
-                    chatUI.classList.add('active');
-                    userEmail.textContent = currentUser.email;
-                    loadChatHistory();
-                    console.log('✅ Auto-logged in as:', currentUser.email);
-                }
-            });
-        }
+        supabase.auth.onAuthStateChange((event, session) => {
+            if (session?.user) {
+                currentUser = session.user;
+                authScreen.style.display = 'none';
+                chatUI.classList.add('active');
+                userEmail.textContent = currentUser.email;
+                loadChatHistory();
+            }
+        });
 
         // ================================================================
         // CHAT HISTORY
         // ================================================================
-
         async function loadChatHistory() {
-            if (!currentUser) {
-                console.log('⚠️ No user to load history for');
-                return;
-            }
+            if (!currentUser) return;
 
-            // Keep welcome message
             chatArea.innerHTML = `
                 <div class="message bot">
                     <div class="avatar">G</div>
                     <div>
                         <div class="bubble">
-                            <p>👋 Welcome, <strong>${currentUser.email?.split('@')[0] || 'friend'}</strong>!</p>
-                            <p style="font-size:13px; color:#8a8aa0;">Start chatting with Goldex AI!</p>
+                            <p>👋 Welcome back, <strong>${currentUser.email?.split('@')[0] || 'friend'}</strong>!</p>
+                            <p style="font-size:13px; color:#8a8aa0;">Your history is loaded.</p>
                         </div>
                         <div class="timestamp">Just now</div>
                     </div>
                 </div>
             `;
 
-            // If Supabase is available, try to load history
-            if (supabaseClient) {
-                try {
-                    const { data, error } = await supabaseClient
-                        .from('messages')
-                        .select('*')
-                        .eq('user_id', currentUser.id)
-                        .order('created_at', { ascending: true });
+            const { data, error } = await supabase
+                .from('messages')
+                .select('*')
+                .eq('user_id', currentUser.id)
+                .order('created_at', { ascending: true });
 
-                    if (error) {
-                        console.error('Error loading history:', error);
-                        return;
-                    }
+            if (error) { console.error('Error loading history:', error); return; }
 
-                    data?.forEach(function(msg) {
-                        addMessageUI(msg.role, msg.content, msg.created_at);
-                    });
-                    chatArea.scrollTop = chatArea.scrollHeight;
-                } catch (err) {
-                    console.error('Error:', err);
-                }
-            } else {
-                console.log('📱 DEMO MODE: No history loaded');
-            }
+            data?.forEach(msg => addMessageUI(msg.role, msg.content, msg.created_at));
+            chatArea.scrollTop = chatArea.scrollHeight;
         }
 
         async function saveMessage(role, content) {
             if (!currentUser) return;
-
-            if (supabaseClient) {
-                try {
-                    await supabaseClient.from('messages').insert({
-                        user_id: currentUser.id,
-                        role: role,
-                        content: content
-                    });
-                } catch (err) {
-                    console.error('Error saving message:', err);
-                }
-            } else {
-                console.log('📱 DEMO MODE: Message saved locally only');
-            }
+            await supabase.from('messages').insert({ user_id: currentUser.id, role, content });
         }
 
         // ================================================================
         // MESSAGE UI
         // ================================================================
-
-        function addMessageUI(role, content, timestamp) {
+        function addMessageUI(role, content, timestamp = null) {
             const messageDiv = document.createElement('div');
-            messageDiv.className = 'message ' + (role === 'user' ? 'user' : 'bot');
+            messageDiv.className = `message ${role === 'user' ? 'user' : 'bot'}`;
 
             const avatar = document.createElement('div');
             avatar.className = 'avatar';
@@ -610,9 +481,7 @@
             const wrapper = document.createElement('div');
             const bubble = document.createElement('div');
             bubble.className = 'bubble';
-
-            const lines = content.split('\n').filter(function(l) { return l.trim() !== ''; });
-            bubble.innerHTML = lines.map(function(l) { return '<p>' + l + '</p>'; }).join('') || '<p>👋</p>';
+            bubble.innerHTML = content.split('\n').filter(l => l.trim()).map(l => `<p>${l}</p>`).join('') || '<p>👋</p>';
 
             const time = document.createElement('div');
             time.className = 'timestamp';
@@ -624,50 +493,18 @@
             wrapper.appendChild(time);
             messageDiv.appendChild(avatar);
             messageDiv.appendChild(wrapper);
-
             chatArea.insertBefore(messageDiv, typingIndicator);
             chatArea.scrollTop = chatArea.scrollHeight;
         }
 
         // ================================================================
-        // SEND MESSAGE (with Groq support - if key is available)
+        // 🚀 SEND MESSAGE (Working Version!)
         // ================================================================
-
-        // Try to get Groq key from Supabase
-        let GROQ_API_KEY = '';
-
-        async function loadGroqKey() {
-            if (!supabaseClient) {
-                console.log('📱 DEMO MODE: Using demo responses');
-                return;
-            }
-
-            try {
-                const { data, error } = await supabaseClient
-                    .from('app_config')
-                    .select('value')
-                    .eq('key', 'groq_api_key')
-                    .single();
-
-                if (error) {
-                    console.warn('⚠️ Could not load Groq key:', error);
-                    return;
-                }
-
-                GROQ_API_KEY = data.value;
-                console.log('✅ Groq API key loaded from Supabase');
-            } catch (err) {
-                console.error('Error loading Groq key:', err);
-            }
-        }
-
-        // Load the key on startup
-        loadGroqKey();
-
         async function sendMessage() {
             const text = userInput.value.trim();
             if (!text || !currentUser) return;
 
+            // Clear input & disable button
             userInput.value = '';
             userInput.style.height = 'auto';
             sendBtn.disabled = true;
@@ -676,60 +513,59 @@
             addMessageUI('user', text);
             saveMessage('user', text);
 
+            // Show typing
             typingIndicator.classList.add('active');
             chatArea.scrollTop = chatArea.scrollHeight;
 
             try {
-                let reply;
+                // Get Groq key from Supabase
+                const { data, error } = await supabase
+                    .from('app_config')
+                    .select('value')
+                    .eq('key', 'groq_api_key')
+                    .single();
 
-                // Try Groq if key is available
-                if (GROQ_API_KEY) {
-                    try {
-                        const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'Authorization': 'Bearer ' + GROQ_API_KEY
-                            },
-                            body: JSON.stringify({
-                                model: 'llama-3.3-70b-versatile',
-                                messages: [
-                                    { 
-                                        role: 'system', 
-                                        content: 'You are Goldex AI, a helpful assistant. When asked, say "I am Goldex AI."' 
-                                    },
-                                    { role: 'user', content: text }
-                                ],
-                                temperature: 0.7,
-                                max_tokens: 1024
-                            })
-                        });
-
-                        if (response.ok) {
-                            const data = await response.json();
-                            reply = data.choices?.[0]?.message?.content || 'No response.';
-                        } else {
-                            console.error('Groq API error:', response.status);
-                            reply = '⚠️ Groq API error. Please check your API key.';
-                        }
-                    } catch (err) {
-                        console.error('Groq error:', err);
-                        reply = '⚠️ Could not reach Groq. Using demo response.';
-                    }
+                if (error || !data) {
+                    throw new Error('Groq API key not found in Supabase. Please add it.');
                 }
 
-                // If no Groq key or Groq failed, use demo response
-                if (!reply) {
-                    reply = "🤖 I'm Goldex AI! I'm ready to help you.\n\nYou said: \"" + text + "\"\n\nI'm working on connecting to Groq. For now, this is a demo response. Try again soon!";
-                }
+                const GROQ_API_KEY = data.value;
+
+                // Call Groq API
+                const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${GROQ_API_KEY}`
+                    },
+                    body: JSON.stringify({
+                        model: 'llama-3.3-70b-versatile',
+                        messages: [
+                            { role: 'system', content: 'You are Goldex AI, a helpful assistant. When asked, say "I am Goldex AI."' },
+                            { role: 'user', content: text }
+                        ],
+                        temperature: 0.7,
+                        max_tokens: 1024
+                    })
+                });
 
                 typingIndicator.classList.remove('active');
+
+                if (!response.ok) {
+                    const err = await response.json();
+                    throw new Error(err.error?.message || 'API error');
+                }
+
+                const data2 = await response.json();
+                const reply = data2.choices?.[0]?.message?.content || 'No response.';
+
                 addMessageUI('bot', reply);
                 saveMessage('bot', reply);
 
             } catch (err) {
                 typingIndicator.classList.remove('active');
-                addMessageUI('bot', '⚠️ Error: ' + (err.message || 'Something went wrong.'));
+                console.error('Error:', err);
+                addMessageUI('bot', `⚠️ Error: ${err.message || 'Something went wrong.'}`);
             } finally {
                 sendBtn.disabled = false;
                 userInput.focus();
@@ -738,22 +574,19 @@
 
         sendBtn.addEventListener('click', sendMessage);
 
-        userInput.addEventListener('keydown', function(e) {
+        userInput.addEventListener('keydown', (e) => {
             if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
                 sendMessage();
             }
         });
 
-        userInput.addEventListener('input', function() {
+        userInput.addEventListener('input', () => {
             userInput.style.height = 'auto';
             userInput.style.height = Math.min(userInput.scrollHeight, 120) + 'px';
         });
 
         console.log('✅ Goldex AI ready!');
-        console.log('📋 Supabase URL:', SUPABASE_URL);
-        console.log('🔑 Supabase Key available:', SUPABASE_ANON_KEY ? 'Yes' : 'No');
-        console.log('🤖 Groq Key loaded:', GROQ_API_KEY ? 'Yes' : 'No');
     </script>
 </body>
 </html>
