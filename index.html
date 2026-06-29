@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Goldex AI – Smart Chat</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;400;600;700;800&display=swap" rel="stylesheet" />
+
+    <!-- Supabase SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <style>
+        /* ===== SAME STYLES AS BEFORE – KEEP THEM ===== */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: "Inter", sans-serif;
+            background: #08080c;
+            color: #e8e8ef;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 10px;
+        }
+        .app {
+            width: 100%;
+            max-width: 500px;
+            height: 100%;
+            max-height: 920px;
+            background: #121216;
+            border-radius: 32px;
+            box-shadow: 0 30px 80px rgba(0,0,0,0.9);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            border: 1px solid #24242e;
+        }
+        /* ===== AUTH SCREEN ===== */
+        .auth-screen {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+            padding: 40px 28px;
+            background: radial-gradient(ellipse at 50% 0%, #1a1a24, #0b0b10);
+        }
+        .auth-screen .logo-big {
+            font-size: 52px;
+            font-weight: 800;
+            background: linear-gradient(135deg, #f7b731, #e89f1e, #f7b731);
+            background-size: 200% 200%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: shimmer 3s ease-in-out infinite;
+            margin-bottom: 8px;
+        }
+        @keyframes shimmer {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+        .auth-screen .subtitle {
+            color: #7a7a8e;
+            font-size: 15px;
+            margin-bottom: 36px;
+        }
+        .auth-input-group {
+            width: 100%;
+            margin-bottom: 14px;
+        }
+        .auth-input-group label {
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+            color: #8a8a9e;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+        }
+        .auth-input-group input {
+            width: 100%;
+            padding: 14px 16px;
+            background: #1c1c26;
+            border: 1.5px solid #2a2a36;
+            border-radius: 16px;
+            color: #e8e8ef;
+            font-size: 15px;
+            font-family: "Inter", sans-serif;
+            outline: none;
+        }
+        .auth-input-group input:focus {
+            border-color: #f7b731;
+        }
+        .auth-btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #f7b731, #e89f1e);
+            border: none;
+            border-radius: 16px;
+            font-size: 16px;
+            font-weight: 700;
+            color: #0b0b10;
+            cursor: pointer;
+            margin-top: 10px;
+            box-shadow: 0 6px 24px rgba(247, 183, 49, 0.25);
+        }
+        .auth-btn:active { transform: scale(0.97); }
+        .auth-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .auth-switch {
+            margin-top: 20px;
+            font-size: 14px;
+            color: #7a7a8e;
+        }
+        .auth-switch span {
+            color: #f7b731;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .auth-error {
+            color: #ff6b6b;
+            font-size: 13px;
+            margin-top: 10px;
+            display: none;
+        }
+        /* ===== CHAT UI ===== */
+        .chat-ui {
+            display: none;
+            flex-direction: column;
+            height: 100%;
+        }
+        .chat-ui.active { display: flex; }
+        .header {
+            padding: 16px 20px 12px 20px;
+            background: #121216;
+            border-bottom: 1px solid #22222c;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-shrink: 0;
+        }
+        .header .logo {
+            font-size: 22px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #f7b731, #e89f1e);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .header .badge {
+            background: #1e1e28;
+            color: #9090a4;
+            font-size: 9px;
+            font-weight: 600;
+            padding: 3px 10px;
+            border-radius: 20px;
+            border: 1px solid #32323e;
+        }
+        .header .user-info {
+            margin-left: auto;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .header .user-email {
+            font-size: 12px;
+            color: #6a6a7e;
+            max-width: 100px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .header .logout-btn {
+            background: transparent;
+            border: 1px solid #3a3a48;
+            color: #9a9aae;
+            padding: 6px 14px;
+            border-radius: 30px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+        .chat-area {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px 18px 12px 18px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+        .message {
+            display: flex;
+            gap: 12px;
+            max-width: 92%;
+            animation: fadeUp 0.3s ease-out;
+        }
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .message.user { align-self: flex-end; flex-direction: row-reverse; }
+        .message.bot { align-self: flex-start; }
+        .avatar {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 15px;
+            font-weight: 700;
+            color: #0b0b10;
+            background: linear-gradient(135deg, #f7b731, #e89f1e);
+        }
+        .message.user .avatar {
+            background: #2c2c3a;
+            color: #d0d0e0;
+        }
+        .bubble {
+            background: #1c1c26;
+            padding: 12px 16px;
+            border-radius: 18px;
+            border-top-left-radius: 4px;
+            font-size: 15px;
+            line-height: 1.6;
+            border: 1px solid #282834;
+        }
+        .message.user .bubble {
+            background: #262636;
+            border-top-right-radius: 4px;
+            border-top-left-radius: 18px;
+        }
+        .bubble p { margin-bottom: 6px; }
+        .bubble p:last-child { margin-bottom: 0; }
+        .timestamp {
+            font-size: 10px;
+            color: #555568;
+            margin-top: 4px;
+        }
+        .typing-indicator {
+            display: none;
+            align-self: flex-start;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 0;
+        }
+        .typing-indicator.active { display: flex; }
+        .typing-dots {
+            display: flex;
+            gap: 5px;
+            background: #1c1c26;
+            padding: 12px 18px;
+            border-radius: 24px;
+            border-top-left-radius: 4px;
+            border: 1px solid #282834;
+        }
+        .typing-dots span {
+            width: 8px;
+            height: 8px;
+            background: #6b6b80;
+            border-radius: 50%;
+            animation: typingBounce 1.4s ease-in-out infinite;
+        }
+        .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes typingBounce {
+            0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+            30% { transform: translateY(-8px); opacity: 1; }
+        }
+        .input-area {
+            padding: 10px 16px 16px 16px;
+            background: #121216;
+            border-top: 1px solid #22222c;
+            flex-shrink: 0;
+            display: flex;
+            align-items: flex-end;
+            gap: 10px;
+        }
+        .input-wrapper {
+            flex: 1;
+            background: #1a1a24;
+            border-radius: 24px;
+            border: 1.5px solid #2e2e3c;
+            padding: 4px 4px 4px 18px;
+            display: flex;
+            align-items: flex-end;
+            gap: 6px;
+        }
+        .input-wrapper:focus-within { border-color: #f7b731; }
+        .input-wrapper textarea {
+            flex: 1;
+            background: transparent;
+            border: none;
+            outline: none;
+            color: #e8e8ef;
+            font-size: 15px;
+            font-family: "Inter", sans-serif;
+            resize: none;
+            padding: 10px 0;
+            max-height: 120px;
+            line-height: 1.5;
+            min-height: 24px;
+        }
+        .input-wrapper textarea::placeholder { color: #55556a; }
+        .input-wrapper button {
+            background: linear-gradient(135deg, #f7b731, #e89f1e);
+            border: none;
+            color: #0b0b10;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            font-size: 18px;
+            cursor: pointer;
+            box-shadow: 0 4px 16px rgba(247, 183, 49, 0.2);
+        }
+        .input-wrapper button:active { transform: scale(0.92); }
+        .input-wrapper button:disabled { opacity: 0.4; cursor: not-allowed; }
+        .footer {
+            text-align: center;
+            padding: 6px 0 10px 0;
+            font-size: 10px;
+            color: #3a3a4c;
+            border-top: 1px solid #181820;
+            flex-shrink: 0;
+        }
+        .footer strong { color: #f7b731; }
+        @media (max-width: 520px) {
+            .app { max-height: 100vh; border-radius: 0; }
+            body { padding: 0; }
+            .auth-screen { padding: 30px 20px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <!-- AUTH SCREEN -->
+        <div class="auth-screen" id="authScreen">
+            <div class="logo-big">✦ Goldex AI</div>
+            <div class="subtitle">Intelligent. Private. Free.</div>
+            <div class="auth-input-group">
+                <label>Email</label>
+                <input type="email" id="authEmail" placeholder="you@email.com" />
+            </div>
+            <div class="auth-input-group">
+                <label>Password</label>
+                <input type="password" id="authPassword" placeholder="••••••••" />
+            </div>
+            <button class="auth-btn" id="authBtn">Sign In</button>
+            <div class="auth-error" id="authError"></div>
+            <div class="auth-switch">
+                <span id="authToggle">Create Account</span>
+            </div>
+        </div>
+
+        <!-- CHAT UI -->
+        <div class="chat-ui" id="chatUI">
+            <div class="header">
+                <span class="logo">✦ Goldex AI</span>
+                <span class="badge">Smart</span>
+                <div class="user-info">
+                    <span class="user-email" id="userEmail">user@email.com</span>
+                    <button class="logout-btn" id="logoutBtn">✕</button>
+                </div>
+            </div>
+            <div class="chat-area" id="chatArea">
+                <div class="message bot">
+                    <div class="avatar">G</div>
+                    <div>
+                        <div class="bubble">
+                            <p>👋 Welcome to <strong>Goldex AI</strong>!</p>
+                            <p>Your conversations are saved. Ask me anything!</p>
+                        </div>
+                        <div class="timestamp">Just now</div>
+                    </div>
+                </div>
+            </div>
+            <div class="typing-indicator" id="typingIndicator">
+                <div class="avatar" style="background:#1e1e28; color:#f7b731;">G</div>
+                <div class="typing-dots"><span></span><span></span><span></span></div>
+            </div>
+            <div class="input-area">
+                <div class="input-wrapper">
+                    <textarea id="userInput" rows="1" placeholder="Ask Goldex AI..."></textarea>
+                    <button id="sendBtn"><i class="fas fa-arrow-up"></i></button>
+                </div>
+            </div>
+            <div class="footer"><span>✨ <strong>Goldex AI</strong> — Powered by Groq</span></div>
+        </div>
+    </div>
+
+    <script>
+        // ================================================================
+        // 🔥 SUPABASE CONFIG – Replace with YOUR values (FREE, NO BILLING!)
+        // ================================================================
+        const SUPABASE_URL = "https://bfewxrbpohkdlibbhvvw.supabase.co/"; // e.g., https://xxxxx.supabase.co
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJmZXd4cmJwb2hrZGxpYmJodnZ3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI2OTg0ODgsImV4cCI6MjA5ODI3NDQ4OH0.ufzszE5GBJjYmJBGJYipOD1TUaeaW9zs63CZU2ryT_M"; // from Project Settings → API
+
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        // ================================================================
+        // GROQ API (Your key – we'll keep it here for now, but you should proxy it later)
+        // ================================================================
+        // This will be injected by GitHub Actions
+const GROQ_API_KEY = window.GROQ_API_KEY || ''; // Will use Cloudflare Worker instead
+        const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions';
+
+        // ================================================================
+        // DOM REFS
+        // ================================================================
+        const authScreen = document.getElementById('authScreen');
+        const chatUI = document.getElementById('chatUI');
+        const authEmail = document.getElementById('authEmail');
+        const authPassword = document.getElementById('authPassword');
+        const authBtn = document.getElementById('authBtn');
+        const authToggle = document.getElementById('authToggle');
+        const authError = document.getElementById('authError');
+        const userEmail = document.getElementById('userEmail');
+        const logoutBtn = document.getElementById('logoutBtn');
+        const chatArea = document.getElementById('chatArea');
+        const userInput = document.getElementById('userInput');
+        const sendBtn = document.getElementById('sendBtn');
+        const typingIndicator = document.getElementById('typingIndicator');
+
+        let isLogin = true;
+        let currentUser = null;
+
+        // ================================================================
+        // AUTH FUNCTIONS (Supabase)
+        // ================================================================
+
+        authToggle.addEventListener('click', () => {
+            isLogin = !isLogin;
+            authBtn.textContent = isLogin ? 'Sign In' : 'Create Account';
+            authToggle.textContent = isLogin ? 'Create Account' : 'Sign In';
+            authError.style.display = 'none';
+        });
+
+        async function handleAuth() {
+            const email = authEmail.value.trim();
+            const pass = authPassword.value.trim();
+            if (!email || !pass) {
+                showError('Please fill in all fields.');
+                return;
+            }
+
+            authBtn.disabled = true;
+            authError.style.display = 'none';
+
+            try {
+                let result;
+                if (isLogin) {
+                    result = await supabase.auth.signInWithPassword({ email, password: pass });
+                } else {
+                    result = await supabase.auth.signUp({ email, password: pass });
+                }
+
+                if (result.error) throw new Error(result.error.message);
+
+                currentUser = result.data.user;
+                authScreen.style.display = 'none';
+                chatUI.classList.add('active');
+                userEmail.textContent = currentUser.email;
+                loadChatHistory();
+            } catch (err) {
+                showError(err.message);
+            } finally {
+                authBtn.disabled = false;
+            }
+        }
+
+        authBtn.addEventListener('click', handleAuth);
+        authPassword.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') handleAuth();
+        });
+
+        function showError(msg) {
+            authError.textContent = msg;
+            authError.style.display = 'block';
+        }
+
+        // Logout
+        logoutBtn.addEventListener('click', async () => {
+            await supabase.auth.signOut();
+            currentUser = null;
+            chatUI.classList.remove('active');
+            authScreen.style.display = 'flex';
+            chatArea.innerHTML = '';
+            userInput.value = '';
+        });
+
+        // Auto-login check
+        supabase.auth.onAuthStateChange((event, session) => {
+            if (session?.user) {
+                currentUser = session.user;
+                authScreen.style.display = 'none';
+                chatUI.classList.add('active');
+                userEmail.textContent = currentUser.email;
+                loadChatHistory();
+            } else {
+                currentUser = null;
+                chatUI.classList.remove('active');
+                authScreen.style.display = 'flex';
+            }
+        });
+
+        // ================================================================
+        // CHAT HISTORY (Supabase)
+        // ================================================================
+
+        async function loadChatHistory() {
+            if (!currentUser) return;
+
+            // Clear messages (keep welcome)
+            chatArea.innerHTML = `
+                <div class="message bot">
+                    <div class="avatar">G</div>
+                    <div>
+                        <div class="bubble">
+                            <p>👋 Welcome back, <strong>${currentUser.email?.split('@')[0] || 'friend'}</strong>!</p>
+                        </div>
+                        <div class="timestamp">Just now</div>
+                    </div>
+                </div>
+            `;
+
+            const { data, error } = await supabase
+                .from('messages')
+                .select('*')
+                .eq('user_id', currentUser.id)
+                .order('created_at', { ascending: true });
+
+            if (error) {
+                console.error('Error loading history:', error);
+                return;
+            }
+
+            data?.forEach(msg => {
+                addMessageUI(msg.role, msg.content, msg.created_at);
+            });
+            chatArea.scrollTop = chatArea.scrollHeight;
+        }
+
+        async function saveMessage(role, content) {
+            if (!currentUser) return;
+
+            await supabase.from('messages').insert({
+                user_id: currentUser.id,
+                role: role,
+                content: content
+            });
+        }
+
+        // ================================================================
+        // MESSAGE UI
+        // ================================================================
+
+        function addMessageUI(role, content, timestamp = null) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${role === 'user' ? 'user' : 'bot'}`;
+
+            const avatar = document.createElement('div');
+            avatar.className = 'avatar';
+            avatar.textContent = role === 'user' ? 'U' : 'G';
+
+            const wrapper = document.createElement('div');
+            const bubble = document.createElement('div');
+            bubble.className = 'bubble';
+
+            const lines = content.split('\n').filter(l => l.trim() !== '');
+            bubble.innerHTML = lines.map(l => `<p>${l}</p>`).join('') || '<p>👋</p>';
+
+            const time = document.createElement('div');
+            time.className = 'timestamp';
+            time.textContent = timestamp ?
+                new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) :
+                new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+            wrapper.appendChild(bubble);
+            wrapper.appendChild(time);
+            messageDiv.appendChild(avatar);
+            messageDiv.appendChild(wrapper);
+
+            chatArea.insertBefore(messageDiv, typingIndicator);
+            chatArea.scrollTop = chatArea.scrollHeight;
+        }
+
+        // ================================================================
+        // SEND MESSAGE
+        // ================================================================
+
+        async function sendMessage() {
+            const text = userInput.value.trim();
+            if (!text || !currentUser) return;
+
+            userInput.value = '';
+            userInput.style.height = 'auto';
+            sendBtn.disabled = true;
+
+            addMessageUI('user', text);
+            saveMessage('user', text);
+
+            typingIndicator.classList.add('active');
+            chatArea.scrollTop = chatArea.scrollHeight;
+
+            try {
+                const response = await fetch(GROQ_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${GROQ_API_KEY}`
+                    },
+                    body: JSON.stringify({
+                        model: 'llama-3.3-70b-versatile',
+                        messages: [
+                            { role: 'system', content: 'You are Goldex AI. When asked, say "I am Goldex AI."' },
+                            { role: 'user', content: text }
+                        ],
+                        temperature: 0.7,
+                        max_tokens: 1024
+                    })
+                });
+
+                typingIndicator.classList.remove('active');
+
+                if (!response.ok) {
+                    const err = await response.json();
+                    throw new Error(err.error?.message || 'API error');
+                }
+
+                const data = await response.json();
+                const reply = data.choices[0]?.message?.content || 'No response.';
+
+                addMessageUI('bot', reply);
+                saveMessage('bot', reply);
+
+            } catch (err) {
+                typingIndicator.classList.remove('active');
+                addMessageUI('bot', `⚠️ Error: ${err.message || 'Something went wrong.'}`);
+            } finally {
+                sendBtn.disabled = false;
+                userInput.focus();
+            }
+        }
+
+        // ================================================================
+        // EVENT LISTENERS
+        // ================================================================
+
+        sendBtn.addEventListener('click', sendMessage);
+        userInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+        userInput.addEventListener('input', () => {
+            userInput.style.height = 'auto';
+            userInput.style.height = Math.min(userInput.scrollHeight, 120) + 'px';
+        });
+
+        console.log('🚀 Goldex AI with Supabase ready!');
+    </script>
+</body>
+</html>
